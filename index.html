@@ -2,7 +2,7 @@ Mykyta Fomenko, [17.02.2026 20:03]
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-9">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Petard Crash</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -108,54 +108,58 @@ Mykyta Fomenko, [17.02.2026 20:03]
     </div>
 
     <script>
-        let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.MainButton.setParams({ text: "ЗАКРЫТЬ ИГРУ", color: "#161821" });
+    let tg = window.Telegram.WebApp;
+    tg.expand(); // Развернуть на весь экран
 
-        let currentMultiplier = 1.00;
-        let gameInterval;
-        let isRunning = false;
+    let currentMultiplier = 1.00;
+    let gameInterval;
+    let isRunning = false;
 
-        function startGame() {
-            isRunning = true;
-            currentMultiplier = 1.00;
+    const multDisplay = document.getElementById('multiplier');
+    const startBtn = document.getElementById('start-btn');
+    const cashBtn = document.getElementById('cashout-btn');
+
+    function startGame() {
+        if (isRunning) return;
+        
+        isRunning = true;
+        currentMultiplier = 1.00;
+        
+        // Визуально меняем кнопки
+        multDisplay.classList.remove('boom');
+        startBtn.style.display = 'none';
+        cashBtn.style.display = 'block';
+
+        // Запускаем цикл роста
+        gameInterval = setInterval(() => {
+            currentMultiplier += 0.01; // Скорость роста
+            multDisplay.innerText = currentMultiplier.toFixed(2) + 'x';
             
-            document.getElementById('multiplier').classList.remove('boom');
-            document.getElementById('start-btn').style.display = 'none';
-            document.getElementById('cashout-btn').style.display = 'block';
+            // Маленький эффект пульсации
+            multDisplay.style.transform = scale(${1 + (currentMultiplier * 0.02)});
+        }, 100); 
+    }
 
-            gameInterval = setInterval(() => {
-                // Плавное ускорение роста
-                let increment = 0.01 + (currentMultiplier * 0.002); 
-                currentMultiplier += increment;
+    function cashOut() {
+        if (!isRunning) return;
+        
+        clearInterval(gameInterval);
+        isRunning = false;
+        
+        let stopAt = currentMultiplier.toFixed(2);
+        
+        // Отправляем данные боту (в Python)
+        tg.sendData(JSON.stringify({
+            "action": "cashout_request",
+            "stopped_at": stopAt
+        }));
 
-Mykyta Fomenko, [17.02.2026 20:03]
-let displayVal = currentMultiplier.toFixed(2);
-                document.getElementById('multiplier').innerText = displayVal + 'x';
+        // Сообщаем игроку и закрываем через секунду
+        multDisplay.style.color = "#00ff88"; 
+        alert("Забрал на: " + stopAt + "x");
+        setTimeout(() => tg.close(), 500);
+    }
+</script>
 
-                // Для красоты: слегка пульсируем текст
-                document.getElementById('multiplier').style.transform = scale(${1 + (currentMultiplier * 0.01)});
-            }, 100);
-        }
-
-        function cashOut() {
-            if (!isRunning) return;
-            clearInterval(gameInterval);
-            isRunning = false;
-            
-            let stopAt = currentMultiplier.toFixed(2);
-            
-            // Отправляем данные на сервер для проверки
-            tg.sendData(JSON.stringify({
-                "action": "cashout_request",
-                "stopped_at": stopAt
-            }));
-            
-            setTimeout(() => tg.close(), 1000);
-        }
-
-        // Эмуляция краша для красоты (визуальная, сервер всё равно проверит)
-        // В реальном боте мы можем передать время краша через URL WebApp
-    </script>
 </body>
 </html>
